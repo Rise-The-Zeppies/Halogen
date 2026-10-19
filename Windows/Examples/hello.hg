@@ -1,0 +1,3 @@
+#/ The first Halogen program \#
+write("Hello, world!")
+write("Welcome to Halogen")
