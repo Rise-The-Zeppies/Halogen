@@ -1,0 +1,11 @@
+var("score") set 8
+
+if score >= 10:
+    write("High score")
+else:
+    write("Keep going")
+end
+
+rpt 3:
+    write("Halogen loop")
+end
