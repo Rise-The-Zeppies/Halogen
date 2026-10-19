@@ -7,8 +7,27 @@ internal sealed class MainForm : Form
     private readonly RichTextBox editor = new();
     private readonly RichTextBox console = new();
     private string? currentFile;
+    private HalogenUIWindow? uiPreview;
 
-    public MainForm()
+    private const string DefaultSource = """
+        ui.declare [
+            command.parameter:
+                (title: "HalogenUI Demo")
+                (size: 900x620)
+        ]
+        end
+
+        ui.background("#101820")
+        ui.rect(64, 70, 250, 140, "#00D9FF")
+        ui.circle(420, 140, 96, "#FFB000")
+        ui.text("HalogenUI is alive!", 64, 260, "#FFFFFF")
+        ui.secrpt 5:
+            ui.text("This text repeats for 5 seconds", 64, 320, "#7CFFB2")
+        end
+        ui.show()
+        """;
+
+    public MainForm(string? initialFile = null)
     {
         Text = "Halogen";
         Width = 1180;
@@ -17,7 +36,7 @@ internal sealed class MainForm : Form
         BackColor = Color.FromArgb(30, 33, 42);
 
         var toolbar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 42, Padding = new Padding(6), BackColor = Color.FromArgb(38, 42, 53) };
-        AddButton(toolbar, "New", (_, _) => { editor.Clear(); currentFile = null; });
+        AddButton(toolbar, "New", (_, _) => { editor.Clear(); currentFile = null; Text = "Halogen"; });
         AddButton(toolbar, "Open .hg", (_, _) => OpenSource());
         AddButton(toolbar, "Save", (_, _) => SaveSource(false));
         AddButton(toolbar, "Save As", (_, _) => SaveSource(true));
@@ -29,7 +48,21 @@ internal sealed class MainForm : Form
         editor.WordWrap = false;
         editor.BackColor = Color.FromArgb(20, 23, 31);
         editor.ForeColor = Color.FromArgb(225, 232, 241);
-        editor.Text = "#/ Welcome to Halogen! \\#\nwrite(\"Hello, world!\")\nvar(\"score\") set 100\nscore get\nrpt 3:\n    write(\"Again!\")\nend\n";
+        editor.Text = DefaultSource;
+
+        if (!string.IsNullOrWhiteSpace(initialFile) && File.Exists(initialFile))
+        {
+            try
+            {
+                currentFile = Path.GetFullPath(initialFile);
+                editor.Text = File.ReadAllText(currentFile, Encoding.UTF8);
+                Text = "Halogen — " + Path.GetFileName(currentFile);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Could not open startup file");
+            }
+        }
 
         console.Dock = DockStyle.Fill;
         console.ReadOnly = true;
@@ -42,7 +75,9 @@ internal sealed class MainForm : Form
         split.Panel2.Controls.Add(console);
         Controls.Add(split);
         Controls.Add(toolbar);
-        RunSource();
+
+        // Like the macOS starter, launch into a small working HalogenUI demo.
+        Shown += (_, _) => RunSource();
     }
 
     private static void AddButton(Control parent, string text, EventHandler click)
@@ -56,7 +91,12 @@ internal sealed class MainForm : Form
     {
         using var dialog = new OpenFileDialog { Filter = "Halogen source (*.hg)|*.hg|All files (*.*)|*.*" };
         if (dialog.ShowDialog(this) != DialogResult.OK) return;
-        try { editor.Text = File.ReadAllText(dialog.FileName, Encoding.UTF8); currentFile = dialog.FileName; }
+        try
+        {
+            currentFile = dialog.FileName;
+            editor.Text = File.ReadAllText(dialog.FileName, Encoding.UTF8);
+            Text = "Halogen — " + Path.GetFileName(currentFile);
+        }
         catch (Exception ex) { MessageBox.Show(this, ex.Message, "Open failed"); }
     }
 
@@ -75,7 +115,31 @@ internal sealed class MainForm : Form
     private void RunSource()
     {
         console.Clear();
-        try { new HalogenInterpreter(s => console.AppendText(s + Environment.NewLine), prompt => Prompt(prompt)).Run(editor.Text); }
+        try
+        {
+            if (HalogenUIWindow.ContainsUI(editor.Text))
+            {
+                if (uiPreview is null || uiPreview.IsDisposed)
+                {
+                    uiPreview = new HalogenUIWindow(editor.Text);
+                    uiPreview.FormClosed += (_, _) => uiPreview = null;
+                    uiPreview.Show(this);
+                }
+                else
+                {
+                    uiPreview.LoadSource(editor.Text);
+                    if (!uiPreview.Visible) uiPreview.Show(this);
+                    uiPreview.Activate();
+                }
+
+                console.AppendText("HalogenUI preview running." + Environment.NewLine);
+                return;
+            }
+
+            if (uiPreview is { IsDisposed: false }) uiPreview.Close();
+            uiPreview = null;
+            new HalogenInterpreter(s => console.AppendText(s + Environment.NewLine), prompt => Prompt(prompt)).Run(editor.Text);
+        }
         catch (Exception ex) { console.AppendText("ERROR: " + ex.Message + Environment.NewLine); }
     }
 

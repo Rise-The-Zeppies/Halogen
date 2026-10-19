@@ -1,2 +1,21 @@
-#/ Initial HalogenUI drawing API is evolving. \#
-write("HalogenUI preview API is still being implemented in this Windows starter.")
+ui.declare [
+    command.parameter:
+        (title: "HalogenUI for Windows")
+        (size: 900x620)
+]
+end
+
+ui.background("#101820")
+ui.rect(80, 80, 240, 140, "#00D9FF")
+ui.circle(400, 100, 100, "#FFB000")
+ui.text("Hello, Halogen!", 80, 270, "#FFFFFF")
+
+ui.framerpt 120:
+    ui.text("Displayed during the first 120 frames", 80, 330, "#7CFFB2")
+end
+
+ui.secrpt 5:
+    ui.rect(80, 390, 240, 8, "#FF6B6B")
+end
+
+ui.show()
