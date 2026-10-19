@@ -1,0 +1,49 @@
+name: Build Halogen for Windows
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build standalone Windows x64 app
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Publish standalone Windows executable
+        shell: pwsh
+        run: |
+          dotnet publish .\Windows\HalogenWindows.csproj `
+            --configuration Release `
+            --runtime win-x64 `
+            --self-contained true `
+            --output "$env:RUNNER_TEMP\HalogenPublish" `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true
+      - name: Package executable
+        shell: pwsh
+        run: |
+          $package = "$env:RUNNER_TEMP\HalogenPackage"
+          New-Item -ItemType Directory -Force -Path $package | Out-Null
+          Copy-Item "$env:RUNNER_TEMP\HalogenPublish\Halogen.exe" "$package\Halogen.exe"
+          Copy-Item "$env:GITHUB_WORKSPACE\Windows\README.md" "$package\README.txt"
+          Copy-Item "$env:GITHUB_WORKSPACE\Windows\Examples" "$package\Examples" -Recurse
+          Compress-Archive -Path "$package\*" -DestinationPath "$env:GITHUB_WORKSPACE\Halogen-Windows-x64.zip" -Force
+      - name: Upload Windows ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: Halogen-Windows-x64
+          path: Halogen-Windows-x64.zip
+          if-no-files-found: error
+          retention-days: 30
