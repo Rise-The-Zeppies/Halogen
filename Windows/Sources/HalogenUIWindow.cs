@@ -329,19 +329,14 @@ internal sealed class HalogenUIWindow : Form
         }
     }
 
-    private static bool IsActive(RepeatCondition condition, double elapsed) => condition.Unit switch
+    private bool IsActive(RepeatCondition condition, double elapsed) => condition.Unit switch
     {
-        RepeatUnit.Frames => condition.Amount > 0, // frame limit is checked in the instance-aware overload below
+        RepeatUnit.Frames => frameNumber < condition.Amount,
         RepeatUnit.Seconds => elapsed < condition.Amount,
         RepeatUnit.Minutes => elapsed < condition.Amount * 60,
         RepeatUnit.Hours => elapsed < condition.Amount * 3600,
         _ => false
     };
-
-    private bool IsActive(RepeatCondition condition, double elapsed, bool frameCheck = true) =>
-        condition.Unit == RepeatUnit.Frames
-            ? frameNumber < condition.Amount
-            : IsActive(condition, elapsed);
 
     private static Color ParseColor(string value)
     {
