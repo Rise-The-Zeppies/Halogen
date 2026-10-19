@@ -75,7 +75,18 @@ internal sealed class MainForm : Form
     private void RunSource()
     {
         console.Clear();
-        try { new HalogenInterpreter(s => console.AppendText(s + Environment.NewLine), prompt => Prompt(prompt)).Run(editor.Text); }
+        try
+        {
+            if (HalogenUIWindow.ContainsShow(editor.Text))
+            {
+                var window = new HalogenUIWindow(editor.Text);
+                window.Show(this);
+                console.AppendText("HalogenUI preview opened." + Environment.NewLine);
+                return;
+            }
+
+            new HalogenInterpreter(s => console.AppendText(s + Environment.NewLine), prompt => Prompt(prompt)).Run(editor.Text);
+        }
         catch (Exception ex) { console.AppendText("ERROR: " + ex.Message + Environment.NewLine); }
     }
 
