@@ -9,7 +9,7 @@ internal sealed class HalogenInterpreter(Action<string> write, Func<string, stri
 
     public void Run(string source)
     {
-        source = Regex.Replace(source, @"#/[\\s\\S]*?\\#|#/[\\s\\S]*$", m => new string(' ', m.Length));
+        source = Regex.Replace(source, """(?s)#/.*?(?:\\\\#|$)""", m => new string(' ', m.Length));
         Execute(source.Replace("\r", "").Split('\n').ToList(), 0, null);
     }
 
@@ -20,7 +20,7 @@ internal sealed class HalogenInterpreter(Action<string> write, Func<string, stri
             string s = lines[i].Trim();
             if (s.Length == 0) continue;
             if (s == "end" || s == "else" || s.StartsWith("elif ")) return i;
-            var m = Regex.Match(s, @"^rpt\\s+(.+?):?$", RegexOptions.IgnoreCase);
+            var m = Regex.Match(s, @"^rpt\s+(.+?):?$", RegexOptions.IgnoreCase);
             if (m.Success)
             {
                 int end = FindEnd(lines, i + 1);
@@ -30,7 +30,7 @@ internal sealed class HalogenInterpreter(Action<string> write, Func<string, stri
                 i = end;
                 continue;
             }
-            m = Regex.Match(s, @"^if\\s+(.+?):?$", RegexOptions.IgnoreCase);
+            m = Regex.Match(s, @"^if\s+(.+?):?$", RegexOptions.IgnoreCase);
             if (m.Success)
             {
                 int end = FindEnd(lines, i + 1);
@@ -53,17 +53,17 @@ internal sealed class HalogenInterpreter(Action<string> write, Func<string, stri
                 continue;
             }
             if (s.StartsWith("def ")) { i = FindEnd(lines, i + 1); continue; }
-            m = Regex.Match(s, @"^var\\(\\s*[\""'](?<n>[^\\"']+)[\\"']\\s*\\)\\s+set\\s+(.+)$", RegexOptions.IgnoreCase);
+            m = Regex.Match(s, """^var\(\s*["'](?<n>[^"']+)["']\s*\)\s+set\s+(.+)$""", RegexOptions.IgnoreCase);
             if (m.Success) { vars[m.Groups["n"].Value] = Eval(m.Groups[2].Value); continue; }
-            m = Regex.Match(s, @"^str\\(\\s*[\""'](?<n>[^\\"']+)[\\"']\\s*\\)\\s*=\\s*(.*)$", RegexOptions.IgnoreCase);
+            m = Regex.Match(s, """^str\(\s*["'](?<n>[^"']+)["']\s*\)\s*=\s*(.*)$""", RegexOptions.IgnoreCase);
             if (m.Success) { vars[m.Groups["n"].Value] = EvalText(m.Groups[2].Value); continue; }
-            m = Regex.Match(s, @"^bool\\(\\s*[\""'](?<n>[^\\"']+)[\\"']\\s*\\)\\s*=\\s*(T|t|F|f)$", RegexOptions.IgnoreCase);
+            m = Regex.Match(s, """^bool\(\s*["'](?<n>[^"']+)["']\s*\)\s*=\s*(T|t|F|f)$""", RegexOptions.IgnoreCase);
             if (m.Success) { vars[m.Groups["n"].Value] = m.Groups[2].Value.Equals("T", StringComparison.OrdinalIgnoreCase); continue; }
-            m = Regex.Match(s, @"^(?<n>[A-Za-z_]\\w*)\\s+get$");
+            m = Regex.Match(s, """^(?<n>[A-Za-z_]\w*)\s+get$""");
             if (m.Success) { if (!vars.TryGetValue(m.Groups["n"].Value, out var v)) throw new Exception($"Line {i + 1}: unknown variable."); write(Show(v)); continue; }
-            m = Regex.Match(s, @"^write\\((.*)\\)$", RegexOptions.IgnoreCase);
+            m = Regex.Match(s, """^write\((.*)\)$""", RegexOptions.IgnoreCase);
             if (m.Success) { write(Show(Eval(m.Groups[1].Value))); continue; }
-            m = Regex.Match(s, @"^ask\\((.*)\\)$", RegexOptions.IgnoreCase);
+            m = Regex.Match(s, """^ask\((.*)\)$""", RegexOptions.IgnoreCase);
             if (m.Success) { ask(EvalText(m.Groups[1].Value)); continue; }
             if (s == "else" || s.StartsWith("elif ")) throw new Exception($"Line {i + 1}: unmatched {s}.");
             throw new Exception($"Line {i + 1}: unsupported syntax: {s}");
