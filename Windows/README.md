@@ -2,9 +2,9 @@
 
 Native Windows desktop editor/runtime written in C# and Windows Forms on .NET 8.
 
-## Download the EXE
+## Launch
 
-Open the repository's Actions tab and download the \`Halogen-Windows-x64\` artifact from a successful **Build Halogen for Windows** run. Extract it and run \`Halogen.exe\` on 64-bit Windows.
+Run \`Halogen.exe\` on 64-bit Windows. The editor opens with a runnable HalogenUI demo. You can edit it, press **Run**, open another \`.hg\` file, and save your code. You can also launch a source file directly by passing its path to \`Halogen.exe\`.
 
 ## Build locally
 
@@ -14,21 +14,20 @@ Install the .NET 8 SDK, then run from the repository root in PowerShell:
 dotnet publish .\Windows\HalogenWindows.csproj -c Release -r win-x64 --self-contained true -o .\Windows\publish -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
 \`\`\`
 
-## HalogenUI preview
+## HalogenUI features
 
-Open \`Examples\halogenui_demo.hg\` in the editor and click **Run** to open a native preview window.
+The Windows renderer provides the same first-pass drawing features as the macOS starter:
 
-Supported first-pass drawing commands:
+- \`ui.declare [...] end\` for title, window size, and optional icon path.
+- \`ui.background("#101820")\` for the canvas background.
+- \`ui.rect(x, y, width, height, "#RRGGBB")\` for rectangles.
+- \`ui.circle(x, y, diameter, "#RRGGBB")\` for circles.
+- \`ui.text("Hello", x, y, "#RRGGBB")\` for text.
+- \`ui.show()\` to display the rendered interface.
+- \`ui.framerpt N:\`, \`ui.secrpt N:\`, \`ui.minrpt N:\`, and \`ui.hrsrpt N:\` for non-blocking frame- and duration-based drawing blocks.
 
-- \`ui.declare [...] end\` for title and window size.
-- \`ui.background("#101820")\`
-- \`ui.rect(x, y, width, height, "#RRGGBB")\`
-- \`ui.circle(x, y, diameter, "#RRGGBB")\`
-- \`ui.text("Hello", x, y, "#RRGGBB")\`
-- \`ui.show()\`
+The renderer updates at approximately 60 FPS without sleeping the UI thread. Re-running the source updates the existing preview and resets its frame/time counters. If UI drawing commands are present without \`ui.show()\`, a placeholder screen is displayed, matching the macOS starter.
 
-The frame/timing blocks \`ui.framerpt N:\`, \`ui.secrpt N:\`, \`ui.minrpt N:\`, and \`ui.hrsrpt N:\` do not sleep the UI thread; drawing commands are conditionally displayed while their duration is active. The first version accepts literal drawing arguments and does not yet support normal Halogen variables/imports inside UI commands.
+For Windows window icons, use an \`.ico\` path with \`icon? = T "path"\`. The macOS app uses its native \`.icns\`/image support.
 
-On Windows, use an \`.ico\` file for the optional window icon. The macOS app supports \`.icns\`.
-
-Halogen remains experimental. Regular scripting syntax includes \`write()\`, \`ask()\`, variables, comments, repeat loops, conditions, and basic functions.
+This is the same scope as the macOS first pass: UI commands currently accept literal values. Regular Halogen variable assignments, \`from math+ import ...\`, \`halolib\`, input events, buttons, and user-defined functions inside UI drawing expressions are not yet integrated.
