@@ -9,7 +9,7 @@ internal sealed class HalogenInterpreter(Action<string> write, Func<string, stri
 
     public void Run(string source)
     {
-        source = Regex.Replace(source, """(?s)#/.*?(?:\\\\#|$)""", m => new string(' ', m.Length));
+        source = Regex.Replace(source, """(?s)#/.*?(?:\\#|$)""", m => new string(' ', m.Length));
         Execute(source.Replace("\r", "").Split('\n').ToList(), 0, null);
     }
 
