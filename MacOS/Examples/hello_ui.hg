@@ -1,0 +1,22 @@
+ui.declare [
+    command.parameter:
+        (title: "My First HalogenUI App")
+        (size: 900x620)
+        (icon? = T "~/Downloads/coolimage.icns")
+]
+end
+
+ui.background("#101820")
+ui.rect(80, 80, 240, 140, "#00D9FF")
+ui.circle(400, 100, 100, "#FFB000")
+ui.text("Hello, Halogen!", 80, 270, "#FFFFFF")
+
+ui.framerpt 120:
+    ui.text("Shown during the first 120 frames", 80, 330, "#7CFFB2")
+end
+
+ui.secrpt 5:
+    ui.rect(80, 390, 240, 8, "#FF6B6B")
+end
+
+ui.show()
