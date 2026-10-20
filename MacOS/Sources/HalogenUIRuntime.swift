@@ -417,7 +417,7 @@ final class HalogenUIModel: ObservableObject {
         DispatchQueue.main.async {
             if let window = NSApplication.shared.windows.first {
                 window.title = options.title
-                window.setContentSize(NSSize(width: options.width, height: options.height + (isPackagedUI ? 0 : 42)))
+                window.setContentSize(NSSize(width: options.width, height: options.height + (self.isPackagedUI ? 0 : 42)))
             }
             if let iconPath = options.iconPath {
                 let expanded = NSString(string: iconPath).expandingTildeInPath
