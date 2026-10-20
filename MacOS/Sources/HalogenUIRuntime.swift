@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct HalogenUIWindowOptions {
     var title = "HalogenUI"
@@ -383,7 +384,7 @@ final class HalogenUIModel: ObservableObject {
 
     func openFile() {
         let panel = NSOpenPanel()
-        panel.allowedFileTypes = ["hg"]
+        panel.allowedContentTypes = [UTType(filenameExtension: "hg") ?? .item]
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = false
