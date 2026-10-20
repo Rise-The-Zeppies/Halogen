@@ -5,10 +5,14 @@ on:
     branches: [main, master]
     paths:
       - 'MacOS/**'
+      - 'HalogenOS/**'
+      - 'docs/**'
       - '.github/workflows/build-macos.yml'
   pull_request:
     paths:
       - 'MacOS/**'
+      - 'HalogenOS/**'
+      - 'docs/**'
       - '.github/workflows/build-macos.yml'
   workflow_dispatch:
 
@@ -17,22 +21,19 @@ permissions:
 
 jobs:
   build:
-    name: Build native macOS app
+    name: Build and package HalogenUI for macOS
     runs-on: macos-latest
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Build Swift package
-        run: swift build --package-path MacOS --configuration release
-      - name: Package app bundle
+      - name: Build .app, .dmg, .pkg, and data .iso
         run: |
-          chmod +x MacOS/build_app.command
-          MacOS/build_app.command
-          ditto -c -k --sequesterRsrc --keepParent build/HalogenUI.app HalogenUI-macOS.zip
-      - name: Upload macOS app
+          chmod +x MacOS/build_app.command MacOS/package_ui.command
+          MacOS/package_ui.command "$GITHUB_WORKSPACE/MacOS/Examples/hello_ui.hg" "HalogenUI Demo" all "$GITHUB_WORKSPACE/dist"
+      - name: Upload macOS distribution formats
         uses: actions/upload-artifact@v4
         with:
-          name: HalogenUI-macOS
-          path: HalogenUI-macOS.zip
+          name: HalogenUI-macOS-v0.2
+          path: dist/
           if-no-files-found: error
           retention-days: 30

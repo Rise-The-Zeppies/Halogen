@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    name: Build standalone Windows x64 app
+    name: Build Windows x64 app and UI package
     runs-on: windows-latest
     steps:
       - name: Check out repository
@@ -20,18 +20,10 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Publish standalone Windows executable
+      - name: Publish standalone Windows editor
         shell: pwsh
-        run: |
-          dotnet publish .\Windows\HalogenWindows.csproj `
-            --configuration Release `
-            --runtime win-x64 `
-            --self-contained true `
-            --output "$env:RUNNER_TEMP\HalogenPublish" `
-            -p:PublishSingleFile=true `
-            -p:IncludeNativeLibrariesForSelfExtract=true `
-            -p:EnableCompressionInSingleFile=true
-      - name: Package executable
+        run: dotnet publish .\Windows\HalogenWindows.csproj --configuration Release --runtime win-x64 --self-contained true --output "$env:RUNNER_TEMP\HalogenPublish" -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true
+      - name: Package editor ZIP
         shell: pwsh
         run: |
           $package = "$env:RUNNER_TEMP\HalogenPackage"
@@ -40,10 +32,17 @@ jobs:
           Copy-Item "$env:GITHUB_WORKSPACE\Windows\README.md" "$package\README.txt"
           Copy-Item "$env:GITHUB_WORKSPACE\Windows\Examples" "$package\Examples" -Recurse
           Compress-Archive -Path "$package\*" -DestinationPath "$env:GITHUB_WORKSPACE\Halogen-Windows-x64.zip" -Force
-      - name: Upload Windows ZIP
+      - name: Package standalone HalogenUI demo
+        shell: pwsh
+        run: |
+          & .\Windows\package_ui.ps1 .\Windows\Examples\halogenui_demo.hg "HalogenUI Demo" "$env:RUNNER_TEMP\HalogenUIProject"
+          Copy-Item "$env:RUNNER_TEMP\HalogenUIProject\HalogenUI Demo-Windows-x64.zip" "$env:GITHUB_WORKSPACE\HalogenUI-Windows-x64.zip"
+      - name: Upload Windows distributions
         uses: actions/upload-artifact@v4
         with:
           name: Halogen-Windows-x64
-          path: Halogen-Windows-x64.zip
+          path: |
+            Halogen-Windows-x64.zip
+            HalogenUI-Windows-x64.zip
           if-no-files-found: error
           retention-days: 30

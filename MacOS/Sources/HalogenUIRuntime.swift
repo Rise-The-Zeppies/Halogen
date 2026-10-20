@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct HalogenUIWindowOptions {
     var title = "HalogenUI"
@@ -338,6 +339,8 @@ final class HalogenUIModel: ObservableObject {
     private var source: String
     private(set) var startDate = Date()
 
+    @Published private(set) var isPackagedUI = false
+
     init() {
         let demo = """
         ui.declare [
@@ -358,14 +361,22 @@ final class HalogenUIModel: ObservableObject {
         """
         var initialSource = demo
         var initialName = "Built-in demo"
-        if CommandLine.arguments.count > 1 {
-            let path = CommandLine.arguments[1]
-            if FileManager.default.fileExists(atPath: path),
-               let loaded = try? String(contentsOfFile: path, encoding: .utf8) {
-                initialSource = loaded
-                initialName = URL(fileURLWithPath: path).lastPathComponent
-            }
+
+        // Command-line source paths are useful when running the developer preview from Terminal.
+        if let path = CommandLine.arguments.dropFirst().first(where: {
+            URL(fileURLWithPath: $0).pathExtension.lowercased() == "hg" &&
+            FileManager.default.fileExists(atPath: $0)
+        }), let loaded = try? String(contentsOfFile: path, encoding: .utf8) {
+            initialSource = loaded
+            initialName = URL(fileURLWithPath: path).lastPathComponent
+        } else if let bundledProject = Bundle.main.url(forResource: "Main", withExtension: "hg"),
+                  let loaded = try? String(contentsOf: bundledProject, encoding: .utf8) {
+            // The exporter embeds Main.hg so the packaged app launches its UI directly.
+            initialSource = loaded
+            initialName = Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "HalogenUI App"
+            isPackagedUI = true
         }
+
         source = initialSource
         fileName = initialName
         program = (try? HalogenUIParser.parse(initialSource)) ?? (try! HalogenUIParser.parse("ui.show()"))
@@ -373,7 +384,7 @@ final class HalogenUIModel: ObservableObject {
 
     func openFile() {
         let panel = NSOpenPanel()
-        panel.allowedFileTypes = ["hg"]
+        panel.allowedContentTypes = [UTType(filenameExtension: "hg") ?? .item]
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowsMultipleSelection = false
@@ -407,7 +418,7 @@ final class HalogenUIModel: ObservableObject {
         DispatchQueue.main.async {
             if let window = NSApplication.shared.windows.first {
                 window.title = options.title
-                window.setContentSize(NSSize(width: options.width, height: options.height + 42))
+                window.setContentSize(NSSize(width: options.width, height: options.height + (self.isPackagedUI ? 0 : 42)))
             }
             if let iconPath = options.iconPath {
                 let expanded = NSString(string: iconPath).expandingTildeInPath
