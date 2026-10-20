@@ -15,21 +15,23 @@ struct HalogenUIWindowView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 10) {
-                Button("Open .hg…") { model.openFile() }
-                Button("Run") { model.runSource() }
-                Text(model.fileName)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(.secondary)
-                Spacer()
-                Text("HalogenUI · macOS")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            if !model.isPackagedUI {
+                HStack(spacing: 10) {
+                    Button("Open .hg…") { model.openFile() }
+                    Button("Run") { model.runSource() }
+                    Text(model.fileName)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("HalogenUI · macOS")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
 
-            Divider()
+                Divider()
+            }
 
             if model.program.showsUI {
                 TimelineView(.animation(minimumInterval: 1.0 / 60.0)) { context in
