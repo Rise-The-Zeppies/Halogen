@@ -1,34 +1,40 @@
 # HalogenUI for macOS
 
-This is the first source-controlled native macOS renderer for HalogenUI. It targets macOS 12 Monterey or newer and uses SwiftUI's native drawing canvas.
+Native SwiftUI preview/runtime targeting macOS 12 Monterey or newer.
 
-## Build on macOS
+## Build the editor/preview
 
-Install Xcode Command Line Tools, then from the repository root run:
+From the repository root:
 
 ~~~bash
 cd MacOS
 swift build -c release
-~~~
-
-To create a double-clickable app bundle, run this from the MacOS folder:
-
-~~~bash
 bash build_app.command
 ~~~
 
-The bundle is written to build/HalogenUI.app at the repository root.
+This creates build/HalogenUI.app.
 
-## Run a Halogen source file
+## Export a standalone HalogenUI project
 
-Open build/HalogenUI.app, click **Open .hg…**, choose an example, and click **Run**. You can also pass a source file to the executable:
+From the repository root:
 
 ~~~bash
-cd MacOS
-.build/release/HalogenMacOS Examples/hello_ui.hg
+bash MacOS/package_ui.command MacOS/Examples/hello_ui.hg "My Halogen App" all
 ~~~
 
-## Initial syntax
+The exporter embeds the selected .hg source as Contents/Resources/Main.hg. The resulting .app runs that source automatically without the developer toolbar. Output is written to dist/ by default.
+
+Formats:
+- **.app:** standalone macOS application bundle.
+- **.dmg:** compressed disk image containing the app.
+- **.pkg:** macOS installer package that installs the app to /Applications.
+- **.iso:** data-disc ISO containing the generated app and installer materials. This is **not** a bootable operating-system ISO.
+
+Use app, dmg, pkg, or iso as the third argument to generate a narrower selection; use all for all formats. An optional fourth argument sets the output directory.
+
+The script uses macOS-native packaging tools (hdiutil, pkgbuild, plutil), so it must run on a Mac. Apps and packages are unsigned and not notarized; distributing outside your own Mac may trigger Gatekeeper. A Developer ID certificate and Apple notarization credentials are needed for a trusted public release.
+
+## Supported HalogenUI syntax
 
 ~~~halogen
 ui.declare [
@@ -46,8 +52,6 @@ ui.text("Hello, Halogen!", 80, 270, "#FFFFFF")
 ui.show()
 ~~~
 
-Supported rendering commands in this first pass: ui.background, ui.rect, ui.circle, ui.text, and ui.show. Window declaration supports title, size, and the optional icon? = T "path" setting. Colors use #RRGGBB.
+Also supported: ui.framerpt, ui.secrpt, ui.minrpt, and ui.hrsrpt. Drawing arguments are currently literals. Regular variables, from math+ import ..., interactive controls, and callbacks are not yet wired into UI expressions.
 
-The repetition blocks do not sleep or freeze the window. ui.framerpt N: activates its body on the first N render frames; ui.secrpt N:, ui.minrpt N:, and ui.hrsrpt N: activate their bodies until the corresponding elapsed duration has passed. The timeline runs at approximately 60 Hz.
-
-Limitations of this first renderer: it currently reads literal UI drawing commands only. It does not yet execute regular Halogen variable assignments, imports, math+, input events, or user-defined functions inside the UI blocks. The next integration step is connecting these statements to Halogen's main interpreter so UI scripts can use normal Halogen variables.
+For the long-term bootable OS image plan, see HalogenOS/README.md.
